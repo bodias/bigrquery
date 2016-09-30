@@ -28,6 +28,92 @@
 #' @seealso API documentation for insert method:
 #'   \url{https://developers.google.com/bigquery/docs/reference/v2/jobs/insert}
 #' @export
+insert_table_job <- function(project, dataset, table,
+							 friendlyName = NULL,							 
+                             description = NULL,
+							 schema.fields = NULL,							 
+                             timePartitioning.type = NULL,
+							 timePartitioning.expirationMs = NULL) {
+  #assert_that(is.string(project), is.string(query))
+
+  url <- sprintf("projects/%s/datasets/%s/tables", project, dataset)
+  
+  body <- list(
+	kind = "bigquery#table",	
+    tableReference  = list(
+		projectId = project,
+		datasetId = dataset,
+		tableId = table
+    ),
+	schema = list(
+		fields = schema.fields
+	)			
+  )
+
+  # if (!is.null(destination_table)) {
+    # if (is.character(destination_table)) {
+      # destination_table <- parse_table(destination_table, project_id = project)
+    # }
+    # assert_that(is.string(destination_table$project_id),
+                # is.string(destination_table$dataset_id),
+                # is.string(destination_table$table_id))
+    # body$configuration$query$allowLargeResults <- TRUE
+    # body$configuration$query$destinationTable <- list(
+      # projectId = destination_table$project_id,
+      # datasetId = destination_table$dataset_id,
+      # tableId = destination_table$table_id
+    # )
+    # body$configuration$query$createDisposition <- create_disposition
+    # body$configuration$query$writeDisposition <- write_disposition
+  # }
+
+  # if (!is.null(default_dataset)) {
+    # if (is.character(default_dataset)) {
+      # default_dataset <- parse_dataset(default_dataset, project_id = project)
+    # }
+    # assert_that(is.string(default_dataset$project_id),
+                # is.string(default_dataset$dataset_id))
+    # body$configuration$query$defaultDataset <- list(
+      # projectId = default_dataset$project_id,
+      # datasetId = default_dataset$dataset_id
+    # )
+  # }
+
+  bq_post(url, body)
+}
+
+
+
+#' Create a new query job.
+#'
+#' This is a low-level function that creates a query job. To wait until it is
+#' finished and then retrieve the results, see \code{\link{query_exec}}
+#'
+#' @param query SQL query string
+#' @param project project name
+#' @param destination_table (optional) destination table for large queries,
+#'   either as a string in the format used by BigQuery, or as a list with
+#'   \code{project_id}, \code{dataset_id}, and \code{table_id} entries
+#' @param create_disposition behavior for table creation.
+#'   defaults to \code{"CREATE_IF_NEEDED"},
+#'   the only other supported value is \code{"CREATE_NEVER"}; see
+#'   \href{https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.query.createDisposition}{the API documentation}
+#'   for more information
+#' @param write_disposition behavior for writing data.
+#'   defaults to \code{"WRITE_EMPTY"}, other possible values are
+#'   \code{"WRITE_TRUNCATE"} and \code{"WRITE_APPEND"}; see
+#'   \href{https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.query.writeDisposition}{the API documentation}
+#'   for more information
+#' @param default_dataset (optional) default dataset for any table references in
+#'   \code{query}, either as a string in the format used by BigQuery or as a
+#'   list with \code{project_id} and \code{dataset_id} entries
+#' @param useLegacySql (optional) set to \code{FALSE} to enable BigQuery's standard SQL.
+#' @family jobs
+#' @return a job resource list, as documented at
+#'   \url{https://developers.google.com/bigquery/docs/reference/v2/jobs}
+#' @seealso API documentation for insert method:
+#'   \url{https://developers.google.com/bigquery/docs/reference/v2/jobs/insert}
+#' @export
 insert_query_job <- function(query, project, destination_table = NULL,
                              default_dataset = NULL,
                              create_disposition = "CREATE_IF_NEEDED",
