@@ -1,88 +1,69 @@
-#' Create a new query job.
+#' Create a new table.
 #'
-#' This is a low-level function that creates a query job. To wait until it is
-#' finished and then retrieve the results, see \code{\link{query_exec}}
+#' This is a low-level function that creates a new table. 
 #'
-#' @param query SQL query string
 #' @param project project name
-#' @param destination_table (optional) destination table for large queries,
-#'   either as a string in the format used by BigQuery, or as a list with
-#'   \code{project_id}, \code{dataset_id}, and \code{table_id} entries
-#' @param create_disposition behavior for table creation.
-#'   defaults to \code{"CREATE_IF_NEEDED"},
-#'   the only other supported value is \code{"CREATE_NEVER"}; see
-#'   \href{https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.query.createDisposition}{the API documentation}
-#'   for more information
-#' @param write_disposition behavior for writing data.
-#'   defaults to \code{"WRITE_EMPTY"}, other possible values are
-#'   \code{"WRITE_TRUNCATE"} and \code{"WRITE_APPEND"}; see
-#'   \href{https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.query.writeDisposition}{the API documentation}
-#'   for more information
-#' @param default_dataset (optional) default dataset for any table references in
-#'   \code{query}, either as a string in the format used by BigQuery or as a
-#'   list with \code{project_id} and \code{dataset_id} entries
-#' @param useLegacySql (optional) set to \code{FALSE} to enable BigQuery's standard SQL.
+#' @param dataset dataset name
+#' @param tablename table name
+#' @param schema.fields Fields description of the table. It needs to be a data.frame with the following columns:
+#'		name : (Required) The field name. The name must contain only letters (a-z, A-Z), numbers (0-9), or underscores (_), and must start with a letter or underscore. The maximum length is 128 characters.
+#'		type : (Required) The field data type. Possible values include STRING, BYTES, INTEGER, FLOAT, BOOLEAN, TIMESTAMP, DATE, TIME, DATETIME
+#'		mode : (Optional) The field mode. Possible values include NULLABLE, REQUIRED and REPEATED. The default value is NULLABLE.
+#'		description : (Optional) The field description. The maximum length is 16K characters.
+#' @param frienldyName (Optional) A descriptive name for this table.
+#' @param description (Optional) A user-friendly description of this table.
+#' @param timePartitioning.type (Optional) The only type supported is DAY, which will generate one partition per day based on data loading time.
+#' @param timePartitioning.expirationMs (Optional) Number of milliseconds for which to keep the storage for a partition.
 #' @family jobs
-#' @return a job resource list, as documented at
-#'   \url{https://developers.google.com/bigquery/docs/reference/v2/jobs}
-#' @seealso API documentation for insert method:
-#'   \url{https://developers.google.com/bigquery/docs/reference/v2/jobs/insert}
+#' @seealso API documentation for tables method:
+#'   \url{https://cloud.google.com/bigquery/docs/reference/v2/tables}
 #' @export
-insert_table_job <- function(project, dataset, table,
+insert_table_job <- function(project, dataset, tablename,
+							 schema.fields,							 
 							 friendlyName = NULL,							 
-                             description = NULL,
-							 schema.fields = NULL,							 
+                             description = NULL,							 
                              timePartitioning.type = NULL,
 							 timePartitioning.expirationMs = NULL) {
-  #assert_that(is.string(project), is.string(query))
+							 
+	assert_that(is.string(project), is.string(dataset), is.string(tablename))
+	assert_that(is.data.frame(schema.fields))
 
-  url <- sprintf("projects/%s/datasets/%s/tables", project, dataset)
+	url <- sprintf("projects/%s/datasets/%s/tables", project, dataset)
   
-  body <- list(
-	kind = "bigquery#table",	
-    tableReference  = list(
-		projectId = project,
-		datasetId = dataset,
-		tableId = table
-    ),
-	schema = list(
-		fields = schema.fields
-	)			
-  )
+	body <- list(
+		tableReference  = list(
+			projectId = project,
+			datasetId = dataset,
+			tableId = tablename
+		),
+		schema = list(
+			fields = schema.fields
+		)
+	)
 
-  # if (!is.null(destination_table)) {
-    # if (is.character(destination_table)) {
-      # destination_table <- parse_table(destination_table, project_id = project)
-    # }
-    # assert_that(is.string(destination_table$project_id),
-                # is.string(destination_table$dataset_id),
-                # is.string(destination_table$table_id))
-    # body$configuration$query$allowLargeResults <- TRUE
-    # body$configuration$query$destinationTable <- list(
-      # projectId = destination_table$project_id,
-      # datasetId = destination_table$dataset_id,
-      # tableId = destination_table$table_id
-    # )
-    # body$configuration$query$createDisposition <- create_disposition
-    # body$configuration$query$writeDisposition <- write_disposition
-  # }
-
-  # if (!is.null(default_dataset)) {
-    # if (is.character(default_dataset)) {
-      # default_dataset <- parse_dataset(default_dataset, project_id = project)
-    # }
-    # assert_that(is.string(default_dataset$project_id),
-                # is.string(default_dataset$dataset_id))
-    # body$configuration$query$defaultDataset <- list(
-      # projectId = default_dataset$project_id,
-      # datasetId = default_dataset$dataset_id
-    # )
-  # }
-
-  bq_post(url, body)
+	if (!is.null(timePartitioning.type)){
+		assert_that(timePartitioning.type %in% c('DAY'))
+		body$timePartitioning <- list(
+			type = timePartitioning.type
+		)
+		if(!is.null(timePartitioning.expirationMs)){
+			assert_that(is.numeric(timePartitioning.expirationMs),timePartitioning.expirationMs>0)
+			body$timePartitioning.expirationMs <- timePartitioning.expirationMs
+		}
+	}	
+	if (!is.null(friendlyName)){
+		if (is.character(friendlyName)) {
+			body$friendlyName <- friendlyName
+		}
+	}	
+	if (!is.null(description)){
+		if (is.character(description)) {
+			body$description <- description
+		}
+	}	
+	
+	bq_post(url, body)
 }
-
-
 
 #' Create a new query job.
 #'
