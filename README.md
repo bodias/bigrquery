@@ -15,11 +15,11 @@ The current bigrquery release can be installed from CRAN:
 install.packages("bigrquery")
 ```
 
-The newest development release can be installed from github:
+The newest development release can be installed from github. The url below is my, bodias, forked project:
 
 ```R
 # install.packages('devtools')
-devtools::install_github("rstats-db/bigrquery")
+devtools::install_github("bodias/bigrquery")
 ```
 
 ## Authentication
